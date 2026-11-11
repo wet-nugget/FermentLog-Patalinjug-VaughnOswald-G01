@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Access Restricted{% endblock %}
+
+{% block content %}
+<section class="py-4 py-lg-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="soft-panel p-4 p-md-5">
+                <div class="eyebrow">403 · Access restricted</div>
+                <h1 class="display-title mt-3">Wrong bench,<br>no entry.</h1>
+                <p class="text-secondary mt-4 mb-4">
+                    {{ exception|default:"Your current account role does not have permission to view this page." }}
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if user.is_authenticated %}
+                        <a href="{% if user.is_administrator %}{% url 'admin_dashboard' %}{% else %}{% url 'fermenter_dashboard' %}{% endif %}" class="btn btn-lime">
+                            Return to my dashboard <span aria-hidden="true">↗</span>
+                        </a>
+                        <a href="{% url 'profile' %}" class="btn btn-outline-theme rounded-pill px-4">My profile</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-lime">Sign in <span aria-hidden="true">↗</span></a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
