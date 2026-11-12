@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Create account{% endblock %}
+
+{% block content %}
+<div class="row g-4 align-items-stretch py-lg-4">
+    <div class="col-lg-5">
+        <section class="auth-aside p-4 p-md-5 d-flex flex-column justify-content-between">
+            <div>
+                <div class="eyebrow">Small-batch precision</div>
+                <h1 class="display-title mt-4">Start your<br>culture log.</h1>
+                <p class="text-white-50 mt-4 mb-0">Create your FermentLog account to manage jars, record pH readings, and stay ahead of daily fermentation care.</p>
+            </div>
+            <div class="pt-5 text-white-50 small">01 <span class="mx-2">/</span> Brine ratios, jar capacities, and daily care in one place</div>
+        </section>
+    </div>
+    <div class="col-lg-7">
+        <section class="soft-panel p-4 p-md-5 h-100">
+            <div class="eyebrow">Start with the basics</div>
+            <h2 class="h2 mt-2 mb-1">Create your account</h2>
+            <p class="text-secondary mb-4">Set up your FermentLog identity and station role.</p>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="errorlist mb-3">{{ form.non_field_errors }}</div>
+                {% endif %}
+                {% for field in form %}
+                    <div class="form-field mb-3">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.errors %}<div class="errorlist">{{ field.errors }}</div>{% endif %}
+                        {% if field.help_text %}<div class="helptext mt-1">{{ field.help_text|safe }}</div>{% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-lime w-100 mt-2">Create account <span aria-hidden="true">↗</span></button>
+            </form>
+            <p class="small text-secondary mt-4 mb-0">Already have a FermentLog account? <a href="{% url 'login' %}" class="fw-semibold">Sign in</a></p>
+        </section>
+    </div>
+</div>
+{% endblock %}
