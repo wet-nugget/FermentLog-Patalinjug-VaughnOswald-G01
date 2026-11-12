@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-lg-5">
+    <div class="col-lg-10">
+        <div class="row g-0 soft-panel overflow-hidden">
+            <div class="col-lg-5 auth-aside p-4 p-md-5 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="eyebrow">Your fermentation logbook</div>
+                    <h1 class="display-title mt-4">Check on<br>your jars.</h1>
+                    <p class="text-white-50 mt-4 mb-0">Track brine ratios, daily burping schedules, and flavor inspections from one quiet workspace.</p>
+                </div>
+                <div class="mt-5 pt-4 text-white-50 small">Small-batch precision, kept in one place.</div>
+            </div>
+            <div class="col-lg-7 p-4 p-md-5">
+                <div class="eyebrow">Welcome back</div>
+                <h2 class="h2 mt-2">Sign in</h2>
+                <p class="text-secondary mb-4">Use your FermentLog credentials to open your station.</p>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="errorlist mb-3">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    {% for field in form %}
+                        <div class="form-field mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.errors %}<div class="errorlist">{{ field.errors }}</div>{% endif %}
+                            {% if field.help_text %}<div class="helptext mt-1">{{ field.help_text }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+                    <button type="submit" class="btn btn-lime w-100 mt-2">Sign in <span aria-hidden="true">↗</span></button>
+                </form>
+                <p class="small text-secondary mt-4 mb-0">New to FermentLog? <a href="{% url 'signup' %}" class="fw-semibold">Create an account</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
