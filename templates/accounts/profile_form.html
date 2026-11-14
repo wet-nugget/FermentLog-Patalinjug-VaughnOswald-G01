@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}My profile{% endblock %}
+
+{% block content %}
+<section class="py-2 py-lg-4">
+    <div class="mb-4 mb-lg-5">
+        <div class="eyebrow">Your space</div>
+        <h1 class="display-title mt-3 mb-2">My profile</h1>
+        <p class="text-secondary mb-0">Your FermentLog identity, contact details, and fermentation focus.</p>
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-5">
+            <div class="soft-panel p-4 p-md-5 h-100">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    {% if user.profile_photo %}
+                        <img src="{{ user.profile_photo.url }}" alt="{{ user.full_name }} avatar" class="profile-avatar flex-shrink-0">
+                    {% else %}
+                        <div class="profile-monogram flex-shrink-0" aria-hidden="true">{{ user.first_name|default:user.username|first|upper }}</div>
+                    {% endif %}
+                    <div class="min-w-0">
+                        <h2 class="h3 mb-1">{{ user.full_name }}</h2>
+                        <p class="text-secondary mb-2">@{{ user.username }}</p>
+                        <span class="badge rounded-pill profile-role">{{ user.get_role_display }}</span>
+                    </div>
+                </div>
+
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Email</div>
+                    <div class="profile-detail-value">{{ user.email|default:"Not added yet" }}</div>
+                </div>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Contact number</div>
+                    <div class="profile-detail-value">{{ user.contact_number|default:"Not added yet" }}</div>
+                </div>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Preferred ferments</div>
+                    <div class="profile-detail-value">{{ user.preferred_ferment|default:"Not added yet" }}</div>
+                </div>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Full name</div>
+                    <div class="profile-detail-value">{{ user.get_full_name|default:"Not added yet" }}</div>
+                </div>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Bio</div>
+                    <div class="profile-detail-value">{{ user.bio|default:"No bio added yet" }}</div>
+                </div>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Member since</div>
+                    <div class="profile-detail-value">{{ user.date_joined|date:"M j, Y" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="soft-panel p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                    <div>
+                        <div class="eyebrow">Profile details</div>
+                        <h2 class="h3 mt-2 mb-1">Your information</h2>
+                    </div>
+                    <button type="button" id="toggleProfileEdit" class="btn btn-lime" aria-expanded="{% if form.errors %}true{% else %}false{% endif %}" aria-controls="profileEditor">
+                        {% if form.errors %}Close editor{% else %}Edit details{% endif %}
+                    </button>
+                </div>
+                <p class="text-secondary mb-4">Update your name, email, contact number, preferred ferments, or profile photo. Your username and role remain protected.</p>
+
+                <div id="profileEditor" class="{% if not form.errors %}d-none{% endif %}">
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="errorlist mb-3">{{ form.non_field_errors }}</div>
+                        {% endif %}
+                        {% for field in form %}
+                            <div class="form-field mb-3">
+                                {{ field.label_tag }}
+                                {{ field }}
+                                {% if field.errors %}<div class="errorlist">{{ field.errors }}</div>{% endif %}
+                                {% if field.help_text %}<div class="helptext mt-1">{{ field.help_text }}</div>{% endif %}
+                            </div>
+                        {% endfor %}
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <button type="submit" class="btn btn-lime">Save changes <span aria-hidden="true">↗</span></button>
+                            <button type="button" id="cancelProfileEdit" class="btn btn-outline-theme rounded-pill px-4">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="profileEditHint" class="profile-edit-hint rounded-4 p-3 {% if form.errors %}d-none{% endif %}">
+                    <span class="eyebrow d-block mb-1">Keep it current</span>
+                    <span class="text-secondary small">Only you can view and update your own FermentLog profile details.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const toggleProfileEdit = document.getElementById('toggleProfileEdit');
+    const profileEditor = document.getElementById('profileEditor');
+    const profileEditHint = document.getElementById('profileEditHint');
+    const cancelProfileEdit = document.getElementById('cancelProfileEdit');
+
+    const setProfileEditor = (isOpen) => {
+        profileEditor.classList.toggle('d-none', !isOpen);
+        profileEditHint.classList.toggle('d-none', isOpen);
+        toggleProfileEdit.textContent = isOpen ? 'Close editor' : 'Edit details';
+        toggleProfileEdit.setAttribute('aria-expanded', String(isOpen));
+    };
+
+    if (toggleProfileEdit && profileEditor && profileEditHint) {
+        toggleProfileEdit.addEventListener('click', () => {
+            setProfileEditor(profileEditor.classList.contains('d-none'));
+        });
+    }
+
+    if (cancelProfileEdit && profileEditor && toggleProfileEdit) {
+        cancelProfileEdit.addEventListener('click', () => {
+            setProfileEditor(false);
+        });
+    }
+</script>
+{% endblock %}
