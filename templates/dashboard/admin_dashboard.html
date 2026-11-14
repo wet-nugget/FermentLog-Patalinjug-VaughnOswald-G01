@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Console{% endblock %}
+
+{% block content %}
+<section class="py-2 py-lg-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4 mb-5">
+        <div>
+            <div class="eyebrow">FermentLog / Operations · Administrator</div>
+            <h1 class="display-title mt-3">Steward the<br>culture library.</h1>
+            <p class="text-secondary mt-3 mb-0">Administrator console active for {{ user.full_name }}.</p>
+        </div>
+        <a href="{% url 'profile' %}" class="btn btn-lime rounded-pill px-4 py-3">My profile <span aria-hidden="true">↗</span></a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="metric-card p-4 h-100">
+                <div class="text-white-50 small">Registered accounts</div>
+                <div class="metric-value mt-2">{{ total_users }}</div>
+                <div class="small text-white-50">total FermentLog account{{ total_users|pluralize }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="soft-panel p-4 h-100">
+                <div class="eyebrow">Home Fermenters</div>
+                <div class="metric-value mt-2">{{ fermenter_count }}</div>
+                <div class="text-secondary small">active member bench accounts</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="soft-panel p-4 h-100">
+                <div class="eyebrow">Administrators</div>
+                <div class="metric-value mt-2">{{ admin_count }}</div>
+                <div class="text-secondary small">system governance accounts</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="soft-panel mt-4 p-4 p-md-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-2 mb-4">
+            <div>
+                <div class="eyebrow">Account directory</div>
+                <h2 class="h3 mt-2 mb-1">Registered users & role assignments</h2>
+                <p class="text-secondary mb-0">Overview of user identities and enforced FermentLog role boundaries.</p>
+            </div>
+            <span class="badge rounded-pill profile-role align-self-start align-self-md-end">Role-Gated View</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-editorial align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">User</th>
+                        <th scope="col">Email</th>
+                        <th scope="col">Role</th>
+                        <th scope="col">Preferred culture</th>
+                        <th scope="col">Joined</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in recent_users %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ account.full_name }}</div>
+                                <div class="small text-secondary">@{{ account.username }}</div>
+                            </td>
+                            <td>{{ account.email }}</td>
+                            <td>
+                                <span class="badge rounded-pill profile-role">{{ account.get_role_display }}</span>
+                            </td>
+                            <td>{{ account.preferred_ferment|default:"—" }}</td>
+                            <td class="small text-secondary">{{ account.date_joined|date:"M j, Y" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-secondary">No registered accounts found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="soft-panel mt-4 p-4 p-md-5">
+        <div class="eyebrow">System governance</div>
+        <h2 class="h3 mt-2 mb-3">Managed reference entities</h2>
+        <div class="row g-3">
+            {% for item in reference_categories %}
+                <div class="col-md-4">
+                    <div class="culture-tile p-3 h-100">
+                        <div class="eyebrow mb-2">{{ item.phase }}</div>
+                        <div class="fw-semibold mb-1">{{ item.label }}</div>
+                        <div class="small text-secondary">{{ item.scope }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

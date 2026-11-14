@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Fermenter Station{% endblock %}
+
+{% block content %}
+<section class="py-2 py-lg-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4 mb-5">
+        <div>
+            <div class="eyebrow">Fermentation Station · Home Fermenter</div>
+            <h1 class="display-title mt-3">Keep every jar<br>in rhythm.</h1>
+            <p class="text-secondary mt-3 mb-0">Welcome back, {{ user.first_name|default:user.username }}. Your fermentation workspace is ready.</p>
+        </div>
+        <a href="{% url 'profile' %}" class="btn btn-lime rounded-pill px-4 py-3">View your profile <span aria-hidden="true">↗</span></a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="metric-card p-4 h-100">
+                <div class="text-white-50 small">Community bench</div>
+                <div class="metric-value mt-2">{{ fermenter_count }}</div>
+                <div class="small text-white-50">registered home fermenter{{ fermenter_count|pluralize }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="soft-panel p-4 h-100">
+                <div class="eyebrow">Your station role</div>
+                <div class="h4 mt-3 mb-1">{{ user.get_role_display }}</div>
+                <div class="text-secondary small">Owner-scoped jars and care schedules</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="soft-panel p-4 h-100">
+                <div class="eyebrow">Preferred culture</div>
+                <div class="h4 mt-3 mb-1">{{ user.preferred_ferment|default:"Not set yet" }}</div>
+                <div class="text-secondary small">Profile completion: {{ profile_completion_percent }}% ({{ profile_fields_completed }}/{{ profile_fields_total }})</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="soft-panel mt-4 p-4 p-md-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-2 mb-4">
+            <div>
+                <div class="eyebrow">Standard reference library</div>
+                <h2 class="h3 mt-2 mb-1">Starter culture baselines</h2>
+                <p class="text-secondary mb-0">Core fermentation categories prepared for upcoming jar logging and schedule phases.</p>
+            </div>
+            <span class="badge rounded-pill profile-role align-self-start align-self-md-end">Phase 1 Foundation</span>
+        </div>
+        <div class="row g-3">
+            {% for culture in standard_cultures %}
+                <div class="col-sm-6 col-lg-3">
+                    <div class="culture-tile p-3 h-100">
+                        <div class="fw-semibold mb-1">{{ culture.name }}</div>
+                        <div class="small text-secondary">{{ culture.ratio }}</div>
+                        <div class="small text-secondary mt-2">{{ culture.cadence }}</div>
+                        <div class="small text-secondary">{{ culture.vessel }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="soft-panel mt-4 p-4 p-md-5 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div>
+            <div class="eyebrow">Station details</div>
+            <h2 class="h3 mt-2 mb-1">Keep your fermenter profile current.</h2>
+            <p class="text-secondary mb-0">Keep your contact details, preferred cultures, and avatar up to date before logging batches.</p>
+        </div>
+        <a href="{% url 'profile' %}" class="btn btn-outline-theme rounded-pill px-4">Update details</a>
+    </div>
+</section>
+{% endblock %}
