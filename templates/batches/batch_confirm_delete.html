@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Delete {{ batch.jar_id }}{% endblock %}
+
+{% block content %}
+<section class="py-4 py-lg-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="soft-panel p-4 p-md-5">
+                <div class="eyebrow">Confirm deletion</div>
+                <h1 class="h2 mt-2 mb-2">Delete batch {{ batch.jar_id }}?</h1>
+                <p class="text-secondary mb-4">
+                    You are about to permanently remove <strong>{{ batch.display_title }}</strong> ({{ batch.ferment_type.name }}, {{ batch.jar_capacity }} mL) from your inventory. Consider archiving instead if you want to keep historical records.
+                </p>
+                <form method="post" class="d-flex flex-wrap gap-2">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-dark rounded-pill px-4">Delete permanently</button>
+                    <a href="{% url 'batch_detail' batch.pk %}" class="btn btn-outline-theme rounded-pill px-4">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

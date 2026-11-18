@@ -8,24 +8,27 @@
         <div>
             <div class="eyebrow">Fermentation Station · Home Fermenter</div>
             <h1 class="display-title mt-3">Keep every jar<br>in rhythm.</h1>
-            <p class="text-secondary mt-3 mb-0">Welcome back, {{ user.first_name|default:user.username }}. Your fermentation workspace is ready.</p>
+            <p class="text-secondary mt-3 mb-0">Welcome back, {{ user.first_name|default:user.username }}. Log batches, inspect brine ratios, and monitor active ferments.</p>
         </div>
-        <a href="{% url 'profile' %}" class="btn btn-lime rounded-pill px-4 py-3">View your profile <span aria-hidden="true">↗</span></a>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'batch_create' %}" class="btn btn-lime rounded-pill px-4 py-3">+ Log new batch <span aria-hidden="true">↗</span></a>
+            <a href="{% url 'ratio_calculator' %}" class="btn btn-outline-theme rounded-pill px-4 py-3">Ratio calculator</a>
+        </div>
     </div>
 
     <div class="row g-3">
         <div class="col-md-4">
             <div class="metric-card p-4 h-100">
-                <div class="text-white-50 small">Community bench</div>
-                <div class="metric-value mt-2">{{ fermenter_count }}</div>
-                <div class="small text-white-50">registered home fermenter{{ fermenter_count|pluralize }}</div>
+                <div class="text-white-50 small">Active fermenting</div>
+                <div class="metric-value mt-2">{{ active_batch_count }}</div>
+                <div class="small text-white-50">vessel{{ active_batch_count|pluralize }} currently fermenting · {{ cold_storage_count }} in cold storage</div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="soft-panel p-4 h-100">
-                <div class="eyebrow">Your station role</div>
-                <div class="h4 mt-3 mb-1">{{ user.get_role_display }}</div>
-                <div class="text-secondary small">Owner-scoped jars and care schedules</div>
+                <div class="eyebrow">Completed &amp; bottled</div>
+                <div class="metric-value mt-2">{{ completed_batch_count }}</div>
+                <div class="text-secondary small">finished batch{{ completed_batch_count|pluralize:"es" }} in your history</div>
             </div>
         </div>
         <div class="col-md-4">
@@ -40,20 +43,63 @@
     <div class="soft-panel mt-4 p-4 p-md-5">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-2 mb-4">
             <div>
+                <div class="eyebrow">Your active bench</div>
+                <h2 class="h3 mt-2 mb-1">Active &amp; cold storage jars</h2>
+                <p class="text-secondary mb-0">Quick look at the vessels currently progressing in your private inventory.</p>
+            </div>
+            <a href="{% url 'batch_list' %}" class="btn btn-outline-theme rounded-pill px-4">View all batches</a>
+        </div>
+        {% if active_batches %}
+            <div class="row g-3">
+                {% for batch in active_batches %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="culture-tile p-3 h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge rounded-pill profile-role">{{ batch.jar_id }}</span>
+                                    <span class="small text-secondary">{{ batch.get_status_display }}</span>
+                                </div>
+                                <div class="fw-semibold">{{ batch.display_title }}</div>
+                                <div class="small text-secondary">{{ batch.ferment_type.name }} · {{ batch.jar_capacity }} mL</div>
+                                <div class="small text-secondary mt-2">
+                                    Day {{ batch.elapsed_days }} of {{ batch.target_duration_days }} ({{ batch.progress_percent }}%)
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <a href="{% url 'batch_detail' batch.pk %}" class="small fw-semibold text-decoration-none">Open batch record ↗</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="culture-tile p-4 text-center">
+                <div class="fw-semibold mb-1">No active batches logged yet</div>
+                <p class="small text-secondary mb-3">Log your first jar batch or test a brine calculation to get started.</p>
+                <a href="{% url 'batch_create' %}" class="btn btn-lime btn-sm">Log first batch <span aria-hidden="true">↗</span></a>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="soft-panel mt-4 p-4 p-md-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-2 mb-4">
+            <div>
                 <div class="eyebrow">Standard reference library</div>
                 <h2 class="h3 mt-2 mb-1">Starter culture baselines</h2>
-                <p class="text-secondary mb-0">Core fermentation categories prepared for upcoming jar logging and schedule phases.</p>
+                <p class="text-secondary mb-0">Core fermentation categories and standard ratio presets available when logging a jar.</p>
             </div>
-            <span class="badge rounded-pill profile-role align-self-start align-self-md-end">Phase 1 Foundation</span>
+            <a href="{% url 'ratio_calculator' %}" class="btn btn-quiet btn-sm">Open calculator</a>
         </div>
         <div class="row g-3">
             {% for culture in standard_cultures %}
                 <div class="col-sm-6 col-lg-3">
                     <div class="culture-tile p-3 h-100">
                         <div class="fw-semibold mb-1">{{ culture.name }}</div>
-                        <div class="small text-secondary">{{ culture.ratio }}</div>
-                        <div class="small text-secondary mt-2">{{ culture.cadence }}</div>
-                        <div class="small text-secondary">{{ culture.vessel }}</div>
+                        {% with tpl=culture.ratio_templates.first %}
+                            <div class="small text-secondary">{% if tpl %}{{ tpl.ratio_summary }}{% else %}Custom ratios{% endif %}</div>
+                        {% endwith %}
+                        <div class="small text-secondary mt-2">{{ culture.default_cadence|default:"Standard fermentation" }}</div>
+                        <div class="small text-secondary">{{ culture.recommended_vessel|default:"Glass jar" }}</div>
                     </div>
                 </div>
             {% endfor %}
@@ -64,7 +110,7 @@
         <div>
             <div class="eyebrow">Station details</div>
             <h2 class="h3 mt-2 mb-1">Keep your fermenter profile current.</h2>
-            <p class="text-secondary mb-0">Keep your contact details, preferred cultures, and avatar up to date before logging batches.</p>
+            <p class="text-secondary mb-0">Keep your contact details, preferred cultures, and avatar up to date.</p>
         </div>
         <a href="{% url 'profile' %}" class="btn btn-outline-theme rounded-pill px-4">Update details</a>
     </div>
