@@ -81,6 +81,13 @@
                     </div>
                     <div class="small text-secondary">For sweetened cultures like kombucha or secondary ferments.</div>
                 </div>
+                {% if user.is_fermenter %}
+                    <div class="mt-4 pt-3 border-top">
+                        <a href="{% url 'batch_create' %}?capacity={{ calculation.jar_capacity_ml }}{% if selected_template %}&template={{ selected_template.pk }}{% endif %}{% if selected_salt_ratio is not None %}&salt={{ selected_salt_ratio }}{% endif %}{% if selected_sugar_ratio is not None %}&sugar={{ selected_sugar_ratio }}{% endif %}" class="btn btn-lime w-100">
+                            Start a batch with these ratios <span aria-hidden="true">↗</span>
+                        </a>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>

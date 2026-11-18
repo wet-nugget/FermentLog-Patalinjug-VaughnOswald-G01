@@ -4,54 +4,7 @@ from django.views.generic import RedirectView, TemplateView
 
 from accounts.models import CustomUser
 from accounts.views import get_role_dashboard_url
-
-STANDARD_CULTURES = [
-    {
-        "name": "Sauerkraut",
-        "ratio": "2.0%–2.5% salt",
-        "cadence": "Daily burp · 14–28d",
-        "vessel": "Glass mason jar",
-    },
-    {
-        "name": "Kimchi",
-        "ratio": "2.5% salt",
-        "cadence": "Daily burp · 5–14d",
-        "vessel": "Glass crock / jar",
-    },
-    {
-        "name": "Hot Sauce",
-        "ratio": "3.0%–3.5% brine",
-        "cadence": "Daily check · 14–21d",
-        "vessel": "Airlock glass jar",
-    },
-    {
-        "name": "Kombucha",
-        "ratio": "7%–10% sugar",
-        "cadence": "Culture feed · 7–14d",
-        "vessel": "Wide-mouth brew jar",
-    },
-]
-
-REFERENCE_CATEGORIES = [
-    {
-        "entity": "ferment_types",
-        "label": "Standard Ferment Categories",
-        "scope": "Kombucha, Sauerkraut, Kimchi, Hot Sauce",
-        "phase": "Phase 3 Ready",
-    },
-    {
-        "entity": "ratio_templates",
-        "label": "Brine & Sugar Ratio Templates",
-        "scope": "Default salt % and sugar % presets per ferment type",
-        "phase": "Phase 3 Ready",
-    },
-    {
-        "entity": "users",
-        "label": "Role & Access Registry",
-        "scope": "FERMENTER and ADMINISTRATOR role boundaries",
-        "phase": "Active in Phase 1",
-    },
-]
+from batches.models import FermentType, JarBatch, RatioTemplate
 
 
 class RoleRequiredMixin(LoginRequiredMixin):
@@ -78,7 +31,7 @@ class DashboardRedirectView(LoginRequiredMixin, RedirectView):
 
 
 class FermenterDashboardView(RoleRequiredMixin, TemplateView):
-    """Home Fermenter station dashboard."""
+    """Home Fermenter station dashboard showing active jars and culture baselines."""
 
     required_role = CustomUser.Role.FERMENTER
     denied_message = (
@@ -98,10 +51,27 @@ class FermenterDashboardView(RoleRequiredMixin, TemplateView):
             user.bio,
         ]
         completed_count = sum(1 for value in tracked_fields if bool(value))
-        context["fermenter_count"] = CustomUser.objects.filter(
-            role=CustomUser.Role.FERMENTER
+
+        user_batches = JarBatch.objects.select_related(
+            "ferment_type", "ratio_template"
+        ).filter(user=user, is_archived=False)
+        active_batches = user_batches.filter(
+            status__in=[JarBatch.Status.FERMENTING, JarBatch.Status.COLD_STORAGE]
+        )
+
+        context["active_batches"] = active_batches[:6]
+        context["active_batch_count"] = user_batches.filter(
+            status=JarBatch.Status.FERMENTING
         ).count()
-        context["standard_cultures"] = STANDARD_CULTURES
+        context["cold_storage_count"] = user_batches.filter(
+            status=JarBatch.Status.COLD_STORAGE
+        ).count()
+        context["completed_batch_count"] = user_batches.filter(
+            status=JarBatch.Status.COMPLETED
+        ).count()
+        context["standard_cultures"] = FermentType.objects.prefetch_related(
+            "ratio_templates"
+        ).filter(is_active=True)
         context["profile_fields_completed"] = completed_count
         context["profile_fields_total"] = len(tracked_fields)
         context["profile_completion_percent"] = round(
@@ -111,7 +81,7 @@ class FermenterDashboardView(RoleRequiredMixin, TemplateView):
 
 
 class AdminDashboardView(RoleRequiredMixin, TemplateView):
-    """Administrator console for user oversight and role governance."""
+    """Administrator console for user oversight and standard reference data."""
 
     required_role = CustomUser.Role.ADMIN
     denied_message = (
@@ -128,6 +98,30 @@ class AdminDashboardView(RoleRequiredMixin, TemplateView):
         context["admin_count"] = CustomUser.objects.filter(
             role=CustomUser.Role.ADMIN
         ).count()
+        context["ferment_type_count"] = FermentType.objects.filter(is_active=True).count()
+        context["ratio_template_count"] = RatioTemplate.objects.filter(
+            is_active=True
+        ).count()
+        context["total_batch_count"] = JarBatch.objects.count()
         context["recent_users"] = CustomUser.objects.order_by("-date_joined")[:20]
-        context["reference_categories"] = REFERENCE_CATEGORIES
+        context["reference_categories"] = [
+            {
+                "label": "Standard Ferment Categories",
+                "count": FermentType.objects.count(),
+                "scope": "Kombucha, Sauerkraut, Kimchi, Hot Sauce, and custom baselines",
+                "status": "Active",
+            },
+            {
+                "label": "Brine & Sugar Ratio Templates",
+                "count": RatioTemplate.objects.count(),
+                "scope": "Salt % and sugar % presets used by the Batch & Jar Logger",
+                "status": "Active",
+            },
+            {
+                "label": "Logged Jar Batches",
+                "count": JarBatch.objects.count(),
+                "scope": "Owner-scoped fermentation vessels tracked across all members",
+                "status": "Active",
+            },
+        ]
         return context
