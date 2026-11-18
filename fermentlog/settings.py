@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "accounts",
     "dashboard",
+    "batches",
 ]
 
 MIDDLEWARE = [
@@ -87,21 +88,33 @@ WSGI_APPLICATION = "fermentlog.wsgi.application"
 
 DB_ENGINE = os.environ.get("DB_ENGINE", "django.db.backends.postgresql")
 
-DATABASES = {
-    "default": {
-        "ENGINE": DB_ENGINE,
-        "NAME": os.environ.get("DB_NAME", "postgres"),
-        "USER": os.environ.get("DB_USER", "postgres"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-        "HOST": os.environ.get("DB_HOST", "localhost"),
-        "PORT": os.environ.get("DB_PORT", "5432"),
+if DB_ENGINE == "django.db.backends.sqlite3":
+    _sqlite_name = os.environ.get("DB_NAME", "db.sqlite3")
+    _sqlite_path = Path(_sqlite_name)
+    if not _sqlite_path.is_absolute():
+        _sqlite_path = BASE_DIR / _sqlite_path
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": _sqlite_path,
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": DB_ENGINE,
+            "NAME": os.environ.get("DB_NAME", "postgres"),
+            "USER": os.environ.get("DB_USER", "postgres"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
+        }
+    }
 
-if DB_ENGINE == "django.db.backends.postgresql":
-    DATABASES["default"]["OPTIONS"] = {
-        "sslmode": os.environ.get("DB_SSLMODE", "prefer"),
-    }
+    if DB_ENGINE == "django.db.backends.postgresql":
+        DATABASES["default"]["OPTIONS"] = {
+            "sslmode": os.environ.get("DB_SSLMODE", "prefer"),
+        }
 
 AUTH_PASSWORD_VALIDATORS = [
     {

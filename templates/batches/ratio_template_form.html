@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}Edit Ratio Template{% else %}New Ratio Template{% endif %}{% endblock %}
+
+{% block content %}
+<section class="py-2 py-lg-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="soft-panel p-4 p-md-5">
+                <div class="eyebrow">Reference Library · Administrator</div>
+                <h1 class="h2 mt-2 mb-1">{% if object %}Edit ratio template{% else %}Add ratio template{% endif %}</h1>
+                <p class="text-secondary mb-4">Configure default salt and sugar percentages and target durations for a ferment category.</p>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="errorlist mb-3">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    {% for field in form %}
+                        {% if field.name == "is_active" %}
+                            <div class="form-check mb-4">
+                                {{ field }}
+                                <label class="form-check-label fw-semibold ms-1" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {% if field.errors %}<div class="errorlist">{{ field.errors }}</div>{% endif %}
+                            </div>
+                        {% else %}
+                            <div class="form-field mb-3">
+                                {{ field.label_tag }}
+                                {{ field }}
+                                {% if field.errors %}<div class="errorlist">{{ field.errors }}</div>{% endif %}
+                                {% if field.help_text %}<div class="helptext mt-1">{{ field.help_text }}</div>{% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        <button type="submit" class="btn btn-lime">Save template <span aria-hidden="true">↗</span></button>
+                        <a href="{% url 'reference_library' %}" class="btn btn-outline-theme rounded-pill px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

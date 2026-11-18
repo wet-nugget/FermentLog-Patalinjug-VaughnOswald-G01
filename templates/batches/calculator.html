@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Ratio Calculator{% endblock %}
+
+{% block content %}
+<section class="py-2 py-lg-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4 mb-5">
+        <div>
+            <div class="eyebrow">Recipe &amp; Ratio Calculator</div>
+            <h1 class="display-title mt-3">Dial in every<br>brine &amp; sweet tea.</h1>
+            <p class="text-secondary mt-3 mb-0">Compute working vessel volume after headspace along with exact salt and sugar gram targets.</p>
+        </div>
+        {% if user.is_fermenter %}
+            <a href="{% url 'fermenter_dashboard' %}" class="btn btn-outline-theme rounded-pill px-4">Back to station</a>
+        {% else %}
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-theme rounded-pill px-4">Back to console</a>
+        {% endif %}
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-6">
+            <div class="soft-panel p-4 p-md-5">
+                <div class="eyebrow">Inputs</div>
+                <h2 class="h3 mt-2 mb-4">Vessel &amp; ratio parameters</h2>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="errorlist mb-3">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    {% for field in form %}
+                        <div class="form-field mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.errors %}<div class="errorlist">{{ field.errors }}</div>{% endif %}
+                            {% if field.help_text %}<div class="helptext mt-1">{{ field.help_text }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-lime w-100 mt-2">Calculate ratios <span aria-hidden="true">↗</span></button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="metric-card p-4 p-md-5 mb-4">
+                <div class="text-white-50 small text-uppercase fw-bold">Calculated Target Output</div>
+                <div class="row g-3 mt-2">
+                    <div class="col-sm-6">
+                        <div class="small text-white-50">Working liquid volume</div>
+                        <div class="metric-value">{{ calculation.working_volume_ml }} mL</div>
+                        <div class="small text-white-50">Reserves {{ calculation.headspace_ml }} mL ({{ calculation.headspace_percent }}%) headspace</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="small text-white-50">Total mass (liquid + produce)</div>
+                        <div class="metric-value">{{ calculation.total_mass_g }} g</div>
+                        <div class="small text-white-50">Nominal jar: {{ calculation.jar_capacity_ml }} mL</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="soft-panel p-4 p-md-5">
+                <div class="eyebrow">Ingredient weights</div>
+                <h2 class="h3 mt-2 mb-3">Exact gram breakdown</h2>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Brine-only salt target{% if selected_salt_ratio is not None %} ({{ selected_salt_ratio }}%){% endif %}</div>
+                    <div class="profile-detail-value fs-4 fw-semibold">
+                        {% if calculation.brine_salt_g is not None %}{{ calculation.brine_salt_g }} g{% else %}—{% endif %}
+                    </div>
+                    <div class="small text-secondary">Salt dissolved into {{ calculation.working_volume_ml }} mL of water/brine.</div>
+                </div>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Total weight salt target (produce + brine)</div>
+                    <div class="profile-detail-value fs-4 fw-semibold">
+                        {% if calculation.total_salt_g is not None %}{{ calculation.total_salt_g }} g{% else %}—{% endif %}
+                    </div>
+                    <div class="small text-secondary">Calculated against {{ calculation.total_mass_g }} g combined mass.</div>
+                </div>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Sugar target{% if selected_sugar_ratio is not None %} ({{ selected_sugar_ratio }}%){% endif %}</div>
+                    <div class="profile-detail-value fs-4 fw-semibold">
+                        {% if calculation.sugar_g is not None %}{{ calculation.sugar_g }} g{% else %}—{% endif %}
+                    </div>
+                    <div class="small text-secondary">For sweetened cultures like kombucha or secondary ferments.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{{ templates_data|json_script:"ratio-templates-data" }}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const tplSelect = document.getElementById('id_ratio_template');
+    const saltInput = document.getElementById('id_salt_ratio');
+    const sugarInput = document.getElementById('id_sugar_ratio');
+    const tplMapEl = document.getElementById('ratio-templates-data');
+    if (tplSelect && tplMapEl) {
+        const tplMap = JSON.parse(tplMapEl.textContent);
+        tplSelect.addEventListener('change', () => {
+            const preset = tplMap[tplSelect.value];
+            if (preset) {
+                if (saltInput) saltInput.value = preset.salt_ratio;
+                if (sugarInput) sugarInput.value = preset.sugar_ratio;
+            }
+        });
+    }
+</script>
+{% endblock %}
