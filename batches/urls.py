@@ -1,6 +1,12 @@
 from django.urls import path
 
 from .views import (
+    BatchArchiveToggleView,
+    BatchCreateView,
+    BatchDeleteView,
+    BatchDetailView,
+    BatchListView,
+    BatchUpdateView,
     FermentTypeCreateView,
     FermentTypeUpdateView,
     RatioCalculatorView,
@@ -10,6 +16,12 @@ from .views import (
 )
 
 urlpatterns = [
+    path("", BatchListView.as_view(), name="batch_list"),
+    path("new/", BatchCreateView.as_view(), name="batch_create"),
+    path("<int:pk>/", BatchDetailView.as_view(), name="batch_detail"),
+    path("<int:pk>/edit/", BatchUpdateView.as_view(), name="batch_edit"),
+    path("<int:pk>/archive/", BatchArchiveToggleView.as_view(), name="batch_archive_toggle"),
+    path("<int:pk>/delete/", BatchDeleteView.as_view(), name="batch_delete"),
     path("calculator/", RatioCalculatorView.as_view(), name="ratio_calculator"),
     path("categories/", ReferenceLibraryView.as_view(), name="reference_library"),
     path("categories/new/", FermentTypeCreateView.as_view(), name="ferment_type_create"),

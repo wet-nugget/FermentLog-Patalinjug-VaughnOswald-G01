@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}{{ batch.jar_id }} · {{ batch.display_title }}{% endblock %}
+
+{% block content %}
+<section class="py-2 py-lg-4">
+    <div class="mb-4">
+        <a href="{% url 'batch_list' %}" class="small text-secondary text-decoration-none">← Back to My Batches</a>
+    </div>
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4 mb-5">
+        <div>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <span class="eyebrow">{{ batch.ferment_type.name }}</span>
+                <span class="badge rounded-pill profile-role">{{ batch.jar_id }}</span>
+                <span class="badge rounded-pill profile-role">{{ batch.get_status_display }}</span>
+                {% if batch.is_archived %}
+                    <span class="badge rounded-pill profile-role">Archived</span>
+                {% endif %}
+            </div>
+            <h1 class="display-title mt-2">{{ batch.display_title }}</h1>
+            <p class="text-secondary mt-3 mb-0">{{ batch.vessel_material }} · {{ batch.jar_capacity }} mL nominal capacity · Started {{ batch.start_date|date:"M j, Y" }}</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'batch_edit' batch.pk %}" class="btn btn-lime">Edit batch <span aria-hidden="true">↗</span></a>
+            <form method="post" action="{% url 'batch_archive_toggle' batch.pk %}" class="m-0">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-theme rounded-pill px-4">
+                    {% if batch.is_archived %}Restore batch{% else %}Archive batch{% endif %}
+                </button>
+            </form>
+            <a href="{% url 'batch_delete' batch.pk %}" class="btn btn-quiet">Delete</a>
+        </div>
+    </div>
+
+    {% if batch.is_ready_for_transition %}
+        <div class="alert alert-success message-alert d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4" role="status">
+            <span>✦ This batch has reached its {{ batch.target_duration_days }}-day fermentation target and is ready to review for cold storage or completion.</span>
+            <a href="{% url 'batch_edit' batch.pk %}" class="btn btn-sm btn-lime">Update status</a>
+        </div>
+    {% endif %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="metric-card p-4 h-100">
+                <div class="small text-white-50">Fermentation age</div>
+                <div class="metric-value mt-2">Day {{ batch.elapsed_days }}</div>
+                <div class="small text-white-50">
+                    Target {{ batch.target_duration_days }}d (ready {{ batch.target_ready_date|date:"M j, Y" }})
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="soft-panel p-4 h-100">
+                <div class="eyebrow">Working fill volume</div>
+                <div class="metric-value mt-2">{{ batch.ratio_breakdown.working_volume_ml }} mL</div>
+                <div class="small text-secondary">Reserves {{ batch.ratio_breakdown.headspace_ml }} mL headspace (15%)</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="soft-panel p-4 h-100">
+                <div class="eyebrow">Calculated ingredient target</div>
+                <div class="h4 mt-3 mb-1">
+                    {% if batch.ratio_breakdown.brine_salt_g is not None %}
+                        {{ batch.ratio_breakdown.brine_salt_g }} g salt ({{ batch.salt_ratio }}%)
+                    {% elif batch.ratio_breakdown.sugar_g is not None %}
+                        {{ batch.ratio_breakdown.sugar_g }} g sugar ({{ batch.sugar_ratio }}%)
+                    {% else %}
+                        Custom recipe
+                    {% endif %}
+                </div>
+                <div class="small text-secondary">
+                    {% if batch.ratio_breakdown.brine_salt_g is not None and batch.ratio_breakdown.sugar_g is not None %}
+                        Plus {{ batch.ratio_breakdown.sugar_g }} g sugar ({{ batch.sugar_ratio }}%)
+                    {% else %}
+                        Scaled to working vessel volume
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="soft-panel p-4 p-md-5 h-100">
+                <div class="eyebrow">Jar specification</div>
+                <h2 class="h3 mt-2 mb-3">Batch record</h2>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Jar ID</div>
+                    <div class="profile-detail-value">{{ batch.jar_id }}</div>
+                </div>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Ferment category</div>
+                    <div class="profile-detail-value">{{ batch.ferment_type.name }}</div>
+                </div>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Ratio template</div>
+                    <div class="profile-detail-value">{{ batch.ratio_template.name|default:"Custom percentages" }}</div>
+                </div>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Salt / Sugar percentages</div>
+                    <div class="profile-detail-value">
+                        Salt: {% if batch.salt_ratio is not None %}{{ batch.salt_ratio }}%{% else %}—{% endif %} ·
+                        Sugar: {% if batch.sugar_ratio is not None %}{{ batch.sugar_ratio }}%{% else %}—{% endif %}
+                    </div>
+                </div>
+                <div class="profile-detail">
+                    <div class="profile-detail-label">Completion date</div>
+                    <div class="profile-detail-value">{{ batch.completion_date|date:"M j, Y"|default:"In progress" }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="soft-panel p-4 p-md-5 h-100">
+                <div class="eyebrow">Recipe &amp; bench log</div>
+                <h2 class="h3 mt-2 mb-3">Ingredients &amp; batch notes</h2>
+                <div class="culture-tile p-4">
+                    {% if batch.ingredients_notes %}
+                        <p class="mb-0" style="white-space: pre-line;">{{ batch.ingredients_notes }}</p>
+                    {% else %}
+                        <p class="text-secondary mb-0">No ingredient weights or preparation notes recorded yet. Click <strong>Edit batch</strong> to add produce weights, spices, or starter notes.</p>
+                    {% endif %}
+                </div>
+                {% if batch.ferment_type.default_cadence %}
+                    <div class="mt-4 pt-3 border-top small text-secondary">
+                        <strong>Recommended cadence:</strong> {{ batch.ferment_type.default_cadence }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

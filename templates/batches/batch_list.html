@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}My Batches{% endblock %}
+
+{% block content %}
+<section class="py-2 py-lg-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4 mb-5">
+        <div>
+            <div class="eyebrow">Batch &amp; Jar Logger</div>
+            <h1 class="display-title mt-3">Every active jar<br>on your bench.</h1>
+            <p class="text-secondary mt-3 mb-0">Log new batches, track fermentation age, inspect calculated ratios, and manage your jar inventory.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'batch_create' %}" class="btn btn-lime">+ Log new batch <span aria-hidden="true">↗</span></a>
+            <a href="{% url 'ratio_calculator' %}" class="btn btn-outline-theme rounded-pill px-4">Ratio calculator</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="metric-card p-3 p-md-4 h-100">
+                <div class="small text-white-50">Fermenting</div>
+                <div class="metric-value mt-1">{{ fermenting_count }}</div>
+                <div class="small text-white-50">active vessel{{ fermenting_count|pluralize }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="soft-panel p-3 p-md-4 h-100">
+                <div class="eyebrow">Cold storage</div>
+                <div class="metric-value mt-1">{{ cold_storage_count }}</div>
+                <div class="small text-secondary">maturing batch{{ cold_storage_count|pluralize:"es" }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="soft-panel p-3 p-md-4 h-100">
+                <div class="eyebrow">Completed</div>
+                <div class="metric-value mt-1">{{ completed_count }}</div>
+                <div class="small text-secondary">bottled / finished</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="soft-panel p-3 p-md-4 h-100">
+                <div class="eyebrow">Archived</div>
+                <div class="metric-value mt-1">{{ archived_count }}</div>
+                <div class="small text-secondary">stored history</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="soft-panel p-4 mb-4">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="id_q" class="form-label">Search jar ID, title, or notes</label>
+                <input type="text" id="id_q" name="q" value="{{ search_query }}" class="form-control" placeholder="e.g. JAR-01 or Kraut">
+            </div>
+            <div class="col-md-3">
+                <label for="id_ferment_type" class="form-label">Category</label>
+                <select id="id_ferment_type" name="ferment_type" class="form-select">
+                    <option value="">All categories</option>
+                    {% for ft in ferment_types %}
+                        <option value="{{ ft.pk }}" {% if selected_ferment_type == ft.pk|stringformat:"s" %}selected{% endif %}>{{ ft.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="id_status" class="form-label">Status</label>
+                <select id="id_status" name="status" class="form-select">
+                    <option value="">All statuses</option>
+                    {% for code, label in status_choices %}
+                        <option value="{{ code }}" {% if selected_status == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-grid gap-2">
+                {% if show_archived %}<input type="hidden" name="archived" value="1">{% endif %}
+                <button type="submit" class="btn btn-lime">Filter</button>
+            </div>
+        </form>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3 pt-3 border-top">
+            <div class="d-flex gap-2">
+                <a href="{% url 'batch_list' %}" class="btn btn-sm {% if not show_archived %}btn-dark{% else %}btn-outline-theme{% endif %} rounded-pill px-3">Active &amp; Completed</a>
+                <a href="{% url 'batch_list' %}?archived=1" class="btn btn-sm {% if show_archived %}btn-dark{% else %}btn-outline-theme{% endif %} rounded-pill px-3">Archived ({{ archived_count }})</a>
+            </div>
+            {% if search_query or selected_status or selected_ferment_type %}
+                <a href="{% url 'batch_list' %}{% if show_archived %}?archived=1{% endif %}" class="small text-secondary">Reset filters</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if batches %}
+        <div class="row g-3">
+            {% for batch in batches %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="soft-panel p-4 h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                                <span class="badge rounded-pill profile-role">{{ batch.jar_id }}</span>
+                                <span class="badge rounded-pill {% if batch.status == 'FERMENTING' %}text-bg-light{% elif batch.status == 'COLD STORAGE' %}profile-role{% else %}btn-lime{% endif %}">
+                                    {{ batch.get_status_display }}
+                                </span>
+                            </div>
+                            <h2 class="h4 mb-1">{{ batch.display_title }}</h2>
+                            <div class="small text-secondary mb-3">{{ batch.ferment_type.name }} · {{ batch.jar_capacity }} mL · {{ batch.vessel_material }}</div>
+
+                            <div class="culture-tile p-3 mb-3">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span class="text-secondary">Fermentation age</span>
+                                    <span class="fw-semibold">Day {{ batch.elapsed_days }} of {{ batch.target_duration_days }}</span>
+                                </div>
+                                <div class="progress" style="height: 6px; background: var(--line);">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ batch.progress_percent }}%; background: var(--lime-ink);" aria-valuenow="{{ batch.progress_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="d-flex justify-content-between small text-secondary mt-2">
+                                    <span>Started {{ batch.start_date|date:"M j, Y" }}</span>
+                                    <span>
+                                        {% if batch.salt_ratio is not None %}{{ batch.salt_ratio }}% salt{% endif %}
+                                        {% if batch.salt_ratio is not None and batch.sugar_ratio is not None %} · {% endif %}
+                                        {% if batch.sugar_ratio is not None %}{{ batch.sugar_ratio }}% sugar{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 mt-2">
+                            <a href="{% url 'batch_detail' batch.pk %}" class="btn btn-lime btn-sm flex-grow-1">View batch <span aria-hidden="true">↗</span></a>
+                            <a href="{% url 'batch_edit' batch.pk %}" class="btn btn-quiet btn-sm">Edit</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="soft-panel p-5 text-center">
+            <div class="eyebrow">No batches found</div>
+            <h2 class="h3 mt-2 mb-2">{% if show_archived %}Your archive is empty{% else %}No jar batches match this view{% endif %}</h2>
+            <p class="text-secondary mb-4">Start logging your fermentation vessels to track salt/sugar ratios and daily fermentation age.</p>
+            <a href="{% url 'batch_create' %}" class="btn btn-lime">Log your first batch <span aria-hidden="true">↗</span></a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

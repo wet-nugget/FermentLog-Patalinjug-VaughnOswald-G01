@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{% if batch %}Edit {{ batch.jar_id }}{% else %}Log New Batch{% endif %}{% endblock %}
+
+{% block content %}
+<section class="py-2 py-lg-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4 mb-5">
+        <div>
+            <div class="eyebrow">Batch &amp; Jar Logger</div>
+            <h1 class="display-title mt-3">{% if batch %}Refine jar<br>{{ batch.jar_id }}.{% else %}Log a new<br>ferment jar.{% endif %}</h1>
+            <p class="text-secondary mt-3 mb-0">Record vessel specifications, select a ratio baseline or custom percentages, and log ingredients.</p>
+        </div>
+        <a href="{% if batch %}{% url 'batch_detail' batch.pk %}{% else %}{% url 'batch_list' %}{% endif %}" class="btn btn-outline-theme rounded-pill px-4">Cancel &amp; return</a>
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-7">
+            <div class="soft-panel p-4 p-md-5">
+                <div class="eyebrow">Batch details</div>
+                <h2 class="h3 mt-2 mb-4">Vessel, schedule &amp; ratios</h2>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="errorlist mb-3">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    <div class="row g-3">
+                        {% for field in form %}
+                            <div class="{% if field.name == 'ingredients_notes' or field.name == 'batch_name' %}col-12{% else %}col-md-6{% endif %} form-field">
+                                {{ field.label_tag }}
+                                {{ field }}
+                                {% if field.errors %}<div class="errorlist">{{ field.errors }}</div>{% endif %}
+                                {% if field.help_text %}<div class="helptext mt-1">{{ field.help_text }}</div>{% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        <button type="submit" class="btn btn-lime">{% if batch %}Save batch changes{% else %}Save jar batch{% endif %} <span aria-hidden="true">↗</span></button>
+                        <a href="{% if batch %}{% url 'batch_detail' batch.pk %}{% else %}{% url 'batch_list' %}{% endif %}" class="btn btn-outline-theme rounded-pill px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="metric-card p-4 p-md-5 mb-4">
+                <div class="text-white-50 small text-uppercase fw-bold">Live Ratio &amp; Volume Preview</div>
+                <div class="mt-3">
+                    <div class="small text-white-50">Working fill volume (85% with 15% headspace)</div>
+                    <div id="previewWorkingVolume" class="metric-value">— mL</div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-6">
+                        <div class="small text-white-50">Salt weight</div>
+                        <div id="previewSaltGrams" class="h4 mb-0">—</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-white-50">Sugar weight</div>
+                        <div id="previewSugarGrams" class="h4 mb-0">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="soft-panel p-4">
+                <div class="eyebrow">Business rules reminder</div>
+                <ul class="small text-secondary mt-3 mb-0 ps-3">
+                    <li class="mb-2">Each jar ID must be unique in your personal inventory.</li>
+                    <li class="mb-2">Selecting a ratio template auto-fills salt, sugar, and target days if left blank.</li>
+                    <li>Marking a batch <strong>Completed</strong> requires a completion / bottling date on or after the start date.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+{{ templates_data|json_script:"batch-ratio-templates" }}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const tplSelect = document.getElementById('id_ratio_template');
+    const typeSelect = document.getElementById('id_ferment_type');
+    const capacityInput = document.getElementById('id_jar_capacity');
+    const saltInput = document.getElementById('id_salt_ratio');
+    const sugarInput = document.getElementById('id_sugar_ratio');
+    const durationInput = document.getElementById('id_target_duration_days');
+    const tplDataEl = document.getElementById('batch-ratio-templates');
+
+    const workingOut = document.getElementById('previewWorkingVolume');
+    const saltOut = document.getElementById('previewSaltGrams');
+    const sugarOut = document.getElementById('previewSugarGrams');
+
+    const updatePreview = () => {
+        const cap = parseFloat(capacityInput && capacityInput.value);
+        const salt = parseFloat(saltInput && saltInput.value);
+        const sugar = parseFloat(sugarInput && sugarInput.value);
+        if (!isNaN(cap) && cap > 0) {
+            const working = cap * 0.85;
+            workingOut.textContent = `${working.toFixed(2)} mL`;
+            saltOut.textContent = !isNaN(salt) ? `${((working * salt) / 100).toFixed(2)} g` : '—';
+            sugarOut.textContent = !isNaN(sugar) ? `${((working * sugar) / 100).toFixed(2)} g` : '—';
+        } else {
+            workingOut.textContent = '— mL';
+            saltOut.textContent = '—';
+            sugarOut.textContent = '—';
+        }
+    };
+
+    if (tplSelect && tplDataEl) {
+        const tplMap = JSON.parse(tplDataEl.textContent);
+        tplSelect.addEventListener('change', () => {
+            const preset = tplMap[tplSelect.value];
+            if (preset) {
+                if (typeSelect && !typeSelect.value) {
+                    typeSelect.value = preset.ferment_type_id;
+                }
+                if (saltInput) saltInput.value = preset.salt_ratio;
+                if (sugarInput) sugarInput.value = preset.sugar_ratio;
+                if (durationInput && preset.duration !== undefined) {
+                    durationInput.value = preset.duration;
+                }
+                updatePreview();
+            }
+        });
+    }
+
+    [capacityInput, saltInput, sugarInput].forEach((el) => {
+        if (el) el.addEventListener('input', updatePreview);
+    });
+    updatePreview();
+</script>
+{% endblock %}
