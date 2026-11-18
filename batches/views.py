@@ -1,11 +1,17 @@
 from decimal import Decimal
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import FormView
+from django.contrib.messages.views import SuccessMessageMixin
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, FormView, TemplateView, UpdateView
+
+from accounts.models import CustomUser
+from dashboard.views import RoleRequiredMixin
 
 from .calculations import calculate_batch_ratios
-from .forms import RatioCalculatorForm
-from .models import RatioTemplate
+from .forms import FermentTypeForm, RatioCalculatorForm, RatioTemplateForm
+from .models import FermentType, RatioTemplate
 
 
 class RatioCalculatorView(LoginRequiredMixin, FormView):
@@ -83,3 +89,96 @@ class RatioCalculatorView(LoginRequiredMixin, FormView):
                 selected_sugar_ratio=data.get("sugar_ratio"),
             )
         )
+
+
+class AdminReferenceMixin(RoleRequiredMixin):
+    """Restrict reference category and ratio template writes to Administrator accounts."""
+
+    required_role = CustomUser.Role.ADMIN
+    denied_message = (
+        "Access denied: Standard ferment categories and ratio templates can only be managed by Administrators."
+    )
+
+
+class ReferenceLibraryView(AdminReferenceMixin, TemplateView):
+    """Administrator catalog view of FermentTypes and RatioTemplates."""
+
+    template_name = "batches/reference_library.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["ferment_types"] = FermentType.objects.prefetch_related(
+            "ratio_templates"
+        ).all()
+        context["ratio_templates"] = RatioTemplate.objects.select_related(
+            "ferment_type"
+        ).all()
+        return context
+
+
+class FermentTypeCreateView(AdminReferenceMixin, SuccessMessageMixin, CreateView):
+    """Create a new standard ferment category (Administrator only)."""
+
+    model = FermentType
+    form_class = FermentTypeForm
+    template_name = "batches/ferment_type_form.html"
+    success_url = reverse_lazy("reference_library")
+    success_message = "Ferment category '%(name)s' has been added to the reference library."
+
+    def form_invalid(self, form):
+        messages.error(
+            self.request,
+            "Could not save the ferment category. Please check the errors below.",
+        )
+        return super().form_invalid(form)
+
+
+class FermentTypeUpdateView(AdminReferenceMixin, SuccessMessageMixin, UpdateView):
+    """Edit an existing standard ferment category (Administrator only)."""
+
+    model = FermentType
+    form_class = FermentTypeForm
+    template_name = "batches/ferment_type_form.html"
+    success_url = reverse_lazy("reference_library")
+    success_message = "Ferment category '%(name)s' has been updated."
+
+    def form_invalid(self, form):
+        messages.error(
+            self.request,
+            "Could not update the ferment category. Please check the errors below.",
+        )
+        return super().form_invalid(form)
+
+
+class RatioTemplateCreateView(AdminReferenceMixin, SuccessMessageMixin, CreateView):
+    """Create a new ratio template preset (Administrator only)."""
+
+    model = RatioTemplate
+    form_class = RatioTemplateForm
+    template_name = "batches/ratio_template_form.html"
+    success_url = reverse_lazy("reference_library")
+    success_message = "Ratio template '%(name)s' has been created."
+
+    def form_invalid(self, form):
+        messages.error(
+            self.request,
+            "Could not save the ratio template. Please check the errors below.",
+        )
+        return super().form_invalid(form)
+
+
+class RatioTemplateUpdateView(AdminReferenceMixin, SuccessMessageMixin, UpdateView):
+    """Edit an existing ratio template preset (Administrator only)."""
+
+    model = RatioTemplate
+    form_class = RatioTemplateForm
+    template_name = "batches/ratio_template_form.html"
+    success_url = reverse_lazy("reference_library")
+    success_message = "Ratio template '%(name)s' has been updated."
+
+    def form_invalid(self, form):
+        messages.error(
+            self.request,
+            "Could not update the ratio template. Please check the errors below.",
+        )
+        return super().form_invalid(form)

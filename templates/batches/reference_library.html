@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Culture &amp; Ratio Library{% endblock %}
+
+{% block content %}
+<section class="py-2 py-lg-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-4 mb-5">
+        <div>
+            <div class="eyebrow">System Governance · Reference Library</div>
+            <h1 class="display-title mt-3">Culture &amp; ratio<br>baselines.</h1>
+            <p class="text-secondary mt-3 mb-0">Manage standard fermentation categories and salt/sugar ratio presets used across jar logging.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'ferment_type_create' %}" class="btn btn-lime">+ New category</a>
+            <a href="{% url 'ratio_template_create' %}" class="btn btn-outline-theme rounded-pill px-4">+ New ratio template</a>
+        </div>
+    </div>
+
+    <div class="soft-panel p-4 p-md-5 mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <div class="eyebrow">Standard categories</div>
+                <h2 class="h3 mt-2 mb-0">Ferment types</h2>
+            </div>
+            <span class="badge rounded-pill profile-role">{{ ferment_types|length }} categories</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-editorial align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Category</th>
+                        <th scope="col">Default cadence</th>
+                        <th scope="col">Recommended vessel</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ft in ferment_types %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ ft.name }}</div>
+                                <div class="small text-secondary">{{ ft.description|default:"—" }}</div>
+                            </td>
+                            <td class="small">{{ ft.default_cadence|default:"—" }}</td>
+                            <td class="small">{{ ft.recommended_vessel|default:"—" }}</td>
+                            <td>
+                                <span class="badge rounded-pill profile-role">
+                                    {% if ft.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'ferment_type_edit' ft.pk %}" class="btn btn-quiet btn-sm">Edit</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-secondary">No ferment categories defined yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="soft-panel p-4 p-md-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <div class="eyebrow">Standard presets</div>
+                <h2 class="h3 mt-2 mb-0">Ratio templates</h2>
+            </div>
+            <span class="badge rounded-pill profile-role">{{ ratio_templates|length }} presets</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-editorial align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Preset name</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Salt %</th>
+                        <th scope="col">Sugar %</th>
+                        <th scope="col">Target days</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tpl in ratio_templates %}
+                        <tr>
+                            <td class="fw-semibold">{{ tpl.name }}</td>
+                            <td>{{ tpl.ferment_type.name }}</td>
+                            <td>{% if tpl.salt_ratio is not None %}{{ tpl.salt_ratio }}%{% else %}—{% endif %}</td>
+                            <td>{% if tpl.sugar_ratio is not None %}{{ tpl.sugar_ratio }}%{% else %}—{% endif %}</td>
+                            <td>{{ tpl.default_duration_days }}d</td>
+                            <td>
+                                <span class="badge rounded-pill profile-role">
+                                    {% if tpl.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'ratio_template_edit' tpl.pk %}" class="btn btn-quiet btn-sm">Edit</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-secondary">No ratio templates created yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

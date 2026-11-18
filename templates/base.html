@@ -219,8 +219,10 @@
                     {% if user.is_authenticated %}
                         {% if user.is_administrator %}
                             <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' or request.resolver_match.url_name == 'admin_panel' %}active{% endif %}" href="{% url 'admin_dashboard' %}">Admin Console</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'reference_library' or request.resolver_match.url_name == 'ferment_type_create' or request.resolver_match.url_name == 'ferment_type_edit' or request.resolver_match.url_name == 'ratio_template_create' or request.resolver_match.url_name == 'ratio_template_edit' %}active{% endif %}" href="{% url 'reference_library' %}">Culture Library</a>
                         {% else %}
                             <a class="nav-link {% if request.resolver_match.url_name == 'fermenter_dashboard' %}active{% endif %}" href="{% url 'fermenter_dashboard' %}">Fermenter Station</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'ratio_calculator' %}active{% endif %}" href="{% url 'ratio_calculator' %}">Ratio Calculator</a>
                         {% endif %}
                         <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">My profile</a>
                         <span class="badge rounded-pill profile-role d-none d-lg-inline-flex">{% if user.is_administrator %}Admin{% else %}Fermenter{% endif %}</span>
